@@ -81,10 +81,6 @@ architecture systole_detector_op of systole_detector is
 	signal s_perc_comp:    	std_logic_vector(DATA_WIDTH - 1 downto 0);
 	--! Valor atual que estou considerando como sístole
 	signal s_c_syst_value:	std_logic_vector(DATA_WIDTH - 1 downto 0);
-	--! @brief Vai ser importante pra calcular a frequência. Conta 
-	--! quantas sístoles já teve desde o último reset ou última vez que
-	--! esteve no S0_INIT. Ver de colocar um range.
-	signal count:			integer;
 	
 	-- Sinais auxiliares (por ora teste)
 	--! Previous s_data_1 value
@@ -211,7 +207,6 @@ architecture systole_detector_op of systole_detector is
 						-- Puts, o diff ainda demora um ciclo pra ser calculado, entao
 						-- acho que deve pegar o s_p_data_1
 						s_c_syst_value  <= s_data_1;
-						count <= count +1;
 						key <= '0';
 					end if;
 				else
@@ -229,7 +224,6 @@ architecture systole_detector_op of systole_detector is
 						-- ruim que vai dar choque entre esse e o outro, pois esse demora
 						-- um ciclo de clock a mais...
 						s_c_syst_value  <= s_p_data_1;
-						count <= count +1;
 					else 
 						-- só mais uma diástole
 						systole       <= '0';

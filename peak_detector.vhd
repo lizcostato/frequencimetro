@@ -54,8 +54,7 @@ entity peak_detector is
 
         -- Outputs --------------------------------------------------
 
-        peak  			:   out std_logic;
-        counter_start   :   out std_logic
+        peak  			:   out std_logic
     );
 
 end peak_detector;
@@ -79,11 +78,11 @@ architecture peak_detector_op of peak_detector is
         end if;
     end process FSM_CS_PROC;
     
-    FSM_NS_PROC: process(s_cstate, start, s_change)
+    FSM_NS_PROC: process(s_cstate, s_change, start)
     begin
         case s_cstate is
         when S0_INIT    =>
-			if rising_edge(start) then
+			if (start = '0') then
 				s_nstate <= S1_SAMP;
 			else
 				s_nstate <= S0_INIT;
@@ -118,7 +117,7 @@ architecture peak_detector_op of peak_detector is
             s_data_0        <= (others => '0');
             s_data_1        <= (others => '1');
             s_diff          <= (others => '0');
-            peak     		<= (others => '0');
+            peak     		<= '0';
         elsif rising_edge(clk) then
             case s_cstate is
             when S0_INIT    =>
@@ -126,13 +125,13 @@ architecture peak_detector_op of peak_detector is
                 s_data_1    <= s_data_1;
                 s_diff      <= s_diff;
                 s_change    <= s_change;
-                peak       <= (others => '0');
+                peak       <= '0';
             when S1_SAMP    =>
                 s_data_0    <= data_in;
                 s_data_1    <= s_data_0;
                 s_diff      <= (signed(s_data_1) - signed(s_data_0));
                 s_change    <= (s_diff(DATA_WIDTH-1));
-                peak       <= (others => '0');
+                peak       <= '0';
             when S2_RIS     =>
                 s_data_0    <= data_in;
                 s_data_1    <= s_data_0;
@@ -144,20 +143,14 @@ architecture peak_detector_op of peak_detector is
                 s_data_1    <= s_data_0;
                 s_diff      <= (signed(s_data_1) - signed(s_data_0));
                 s_change    <= (s_diff(DATA_WIDTH-1));
-                peak       <= (others => '0');
+                peak       <= '0';
             when others     =>
                 s_change    <= '0';
                 s_data_0    <= (others => '0');
                 s_data_1    <= (others => '1');
                 s_diff      <= (others => '0'); 
-                peak       <= (others => '0');
+                peak       <= '0';
             end case;
-        else
-            s_change        <= '0';
-            s_data_0        <= (others => '0');
-            s_data_1        <= (others => '1');
-            s_diff          <= (others => '0'); 
-			peak       <= (others => '0'); 
         end if;
     end process FSM_OUT_PROC;
    

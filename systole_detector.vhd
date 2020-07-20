@@ -175,7 +175,8 @@ architecture systole_detector_op of systole_detector is
         elsif rising_edge(clk) then
             case s_cstate is
             when S0_INIT    =>
-                s_data_0    <= peak_value;
+                s_data_0    	<= peak_value;
+				s_c_syst_value	<= peak_value;
 				-- testando pra ver se assim ele pega o primeiro dado,
 				-- antes era recebendo ele mesmo. 
 				-- Uuuuuhhh, funfou!!
@@ -190,10 +191,9 @@ architecture systole_detector_op of systole_detector is
 					s_data_1    <= s_data_0;
 					s_p_data_1	<= s_data_1;
 					-- como ele demora um ciclo de clock, pegar o anterior pra fazer 
-					-- a conta (lembrando que o s_data_1 é o valor anterior do 
-					-- s_data_0)
-					s_diff      <= (signed(s_data_1) - signed(s_data_0));
-					-- se 1, s_data_0 > s_data_1, logo, o novo é maior
+					-- a conta 
+					s_diff      <= (signed(s_c_syst_value) - signed(s_data_0));
+					-- se 1, s_data_0 > s_c_syst_value, logo, o novo é maior
 					if (s_diff(DATA_WIDTH-1) = '1') then
 						if (key = '0') then
 							key <= '1';
@@ -207,7 +207,7 @@ architecture systole_detector_op of systole_detector is
 							-- Depois reescrever esses trem aqui em 
 							-- Puts, o diff ainda demora um ciclo pra ser calculado, entao
 							-- acho que deve pegar o s_p_data_1
-							s_c_syst_value  <= s_data_1;
+							s_c_syst_value  <= s_p_data_1;
 							key <= '0';
 						end if;
 					else

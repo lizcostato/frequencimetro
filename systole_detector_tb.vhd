@@ -19,7 +19,7 @@ architecture Behavioral of systole_detector_tb is
 			rst_n       :   in std_logic;
 			start       :   in std_logic;
 			peak   		:   in std_logic;
-			data_in     :   in std_logic_vector(DATA_WIDTH - 1 downto 0);
+			peak_value  :   in std_logic_vector(DATA_WIDTH - 1 downto 0);
 			-- Outputs --------------------------------------------------
 			systole   :   out std_logic
 		);
@@ -33,7 +33,7 @@ architecture Behavioral of systole_detector_tb is
 	signal s_rst_n:			std_logic := '0';
     signal s_start:         std_logic := '0';
     signal s_peak:          std_logic := '0';
-    signal s_data_in:       std_logic_vector(DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_peak_value:    std_logic_vector(DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_systole:       std_logic := '0';
 	
 	--constant CLK_HALF_PERIOD:  time := 0.05 ns;
@@ -46,7 +46,7 @@ begin
 			rst_n => s_rst_n,
 			start => s_start,
 			peak => s_peak,
-			data_in => s_data_in,
+			peak_value => s_peak_value,
 			systole => s_systole
         );
     
@@ -62,7 +62,7 @@ begin
                 s_start <= std_logic(data_input(0));
                 s_peak <= data_input(1);
 				s_rst_n <= data_input(2);
-                s_data_in <= std_logic_vector(data_input(10 downto 3));
+                s_peak_value <= std_logic_vector(data_input(10 downto 3));
                 write(data_out_line, s_systole, right, 1);
                 writeline(data_out, data_out_line);
             end if;

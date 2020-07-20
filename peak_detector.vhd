@@ -54,18 +54,20 @@ entity peak_detector is
 
         -- Outputs --------------------------------------------------
 
-        peak  			:   out std_logic
+        peak  			:   out std_logic;
+		peak_value		:	out std_logic_vector(DATA_WIDTH - 1 downto 0)
     );
 
 end peak_detector;
 architecture peak_detector_op of peak_detector is
 
-    signal s_cstate:    ST_FSM_PEAK;
-    signal s_nstate:    ST_FSM_PEAK;
-    signal s_change:    std_logic;
-    signal s_data_0:    std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_data_1:    std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_diff:      std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_cstate:    	ST_FSM_PEAK;
+    signal s_nstate:   		ST_FSM_PEAK;
+    signal s_change:   		std_logic;
+    signal s_data_0:   		std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_data_1:   		std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_diff:     	 	std_logic_vector(DATA_WIDTH - 1 downto 0);
+	--signal s_peak_value		std_logic_vector(DATA_WIDTH - 1 downto 0);
 
     begin
 
@@ -82,7 +84,7 @@ architecture peak_detector_op of peak_detector is
     begin
         case s_cstate is
         when S0_INIT    =>
-			if (start = '0') then
+			if (start = '1') then
 				s_nstate <= S1_SAMP;
 			else
 				s_nstate <= S0_INIT;
@@ -118,6 +120,7 @@ architecture peak_detector_op of peak_detector is
             s_data_1        <= (others => '1');
             s_diff          <= (others => '0');
             peak     		<= '0';
+			peak_value		<= (others => '0');
         elsif rising_edge(clk) then
             case s_cstate is
             when S0_INIT    =>
@@ -126,30 +129,36 @@ architecture peak_detector_op of peak_detector is
                 s_diff      <= s_diff;
                 s_change    <= s_change;
                 peak       <= '0';
+				peak_value	<= (others => '0');
             when S1_SAMP    =>
                 s_data_0    <= data_in;
                 s_data_1    <= s_data_0;
                 s_diff      <= (signed(s_data_1) - signed(s_data_0));
                 s_change    <= (s_diff(DATA_WIDTH-1));
                 peak       <= '0';
+				peak_value	<= (others => '0');
             when S2_RIS     =>
-                s_data_0    <= data_in;
-                s_data_1    <= s_data_0;
-                s_diff      <= (signed(s_data_0) - signed(s_data_1));
-                s_change    <= (s_diff(DATA_WIDTH-1));
-                peak       <= s_change;
+                s_data_0   	 	<= data_in;
+                s_data_1   	 	<= s_data_0;
+                s_diff     	 	<= (signed(s_data_0) - signed(s_data_1));
+                s_change   	 	<= (s_diff(DATA_WIDTH-1));
+                peak       		<= s_change;
+				-- conferir, mas acho que o s_data_1 é o pico
+				peak_value		<= s_data_1;
             when S3_FAL     =>
                 s_data_0    <= data_in;
                 s_data_1    <= s_data_0;
                 s_diff      <= (signed(s_data_1) - signed(s_data_0));
                 s_change    <= (s_diff(DATA_WIDTH-1));
                 peak       <= '0';
+				peak_value	<= (others => '0');
             when others     =>
                 s_change    <= '0';
                 s_data_0    <= (others => '0');
                 s_data_1    <= (others => '1');
                 s_diff      <= (others => '0'); 
                 peak       <= '0';
+				peak_value		<= (others => '0');
             end case;
         end if;
     end process FSM_OUT_PROC;

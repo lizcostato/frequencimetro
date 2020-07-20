@@ -33,7 +33,7 @@ end
 end
 
 fprintf('Número de picos = %d\n', count);
-fprintf('?empo de amostragem: 10s\n');
+fprintf('Tempo de amostragem: 10s\n');
 
 %Considerando que em um período sempre tem 2 picos e que o tempo de
 %amostragem foi de 10 segundos.

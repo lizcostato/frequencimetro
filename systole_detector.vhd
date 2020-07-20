@@ -47,7 +47,7 @@ entity systole_detector is
         rst_n       :   in std_logic;
         start       :   in std_logic;
         peak   		:   in std_logic;
-		data_in     :   in std_logic_vector(DATA_WIDTH - 1 downto 0);
+		peak_value  :   in std_logic_vector(DATA_WIDTH - 1 downto 0);
 
         -- Outputs --------------------------------------------------
 
@@ -175,60 +175,64 @@ architecture systole_detector_op of systole_detector is
         elsif rising_edge(clk) then
             case s_cstate is
             when S0_INIT    =>
-                s_data_0    <= data_in;
+                s_data_0    <= peak_value;
 				-- testando pra ver se assim ele pega o primeiro dado,
 				-- antes era recebendo ele mesmo. 
 				-- Uuuuuhhh, funfou!!
-                s_data_1    <= s_data_0;
-				s_p_data_1		<= s_data_1;
+                s_data_1    <= s_data_1;
+				s_p_data_1		<= s_p_data_1;
                 systole       <= '0';
 				key <= '0';
             when S1_SAMP    =>
 				--s_data_0 é o dado mais novo
-                s_data_0    <= data_in;
-                s_data_1    <= s_data_0;
-				s_p_data_1	<= s_data_1;
-				-- como ele demora um ciclo de clock, pegar o anterior pra fazer 
-				-- a conta (lembrando que o s_data_1 é o valor anterior do 
-				-- s_data_0)
-				s_diff      <= (signed(s_data_1) - signed(s_data_0));
-				-- se 1, s_data_0 > s_data_1, logo, o novo é maior
-				if (s_diff(DATA_WIDTH-1) = '1') then
-					if (key = '0') then
-						key <= '1';
-					else				
-						systole       <= '1'; 
-						-- uma opção nao legivel (mas que tmb daria certo), é usar
-						-- o s_data_1, pq ele tmb ta sempre recebendo o s_data_0,
-						-- logo, te sempre o mesmo valor do s_p_data_0.
-						-- Na real, faz sentido sim...é isso que significa o s_data_1
-						-- Se der certo, mudar isso
-						-- Depois reescrever esses trem aqui em 
-						-- Puts, o diff ainda demora um ciclo pra ser calculado, entao
-						-- acho que deve pegar o s_p_data_1
-						s_c_syst_value  <= s_data_1;
+				if (peak = '1') then
+					s_data_0    <= peak_value;
+					s_data_1    <= s_data_0;
+					s_p_data_1	<= s_data_1;
+					-- como ele demora um ciclo de clock, pegar o anterior pra fazer 
+					-- a conta (lembrando que o s_data_1 é o valor anterior do 
+					-- s_data_0)
+					s_diff      <= (signed(s_data_1) - signed(s_data_0));
+					-- se 1, s_data_0 > s_data_1, logo, o novo é maior
+					if (s_diff(DATA_WIDTH-1) = '1') then
+						if (key = '0') then
+							key <= '1';
+						else				
+							systole       <= '1'; 
+							-- uma opção nao legivel (mas que tmb daria certo), é usar
+							-- o s_data_1, pq ele tmb ta sempre recebendo o s_data_0,
+							-- logo, te sempre o mesmo valor do s_p_data_0.
+							-- Na real, faz sentido sim...é isso que significa o s_data_1
+							-- Se der certo, mudar isso
+							-- Depois reescrever esses trem aqui em 
+							-- Puts, o diff ainda demora um ciclo pra ser calculado, entao
+							-- acho que deve pegar o s_p_data_1
+							s_c_syst_value  <= s_data_1;
+							key <= '0';
+						end if;
+					else
+						-- vendo se o pico menor é mais ou menos de 50% do maior
+						-- se pá, bom aumentar um pouco essa porcentagem
+							-- teria um fift_perc <= s_c_syst_value(DATA_WIDTH-1 downto 1)
+							-- mas isso ta dando um atraso que n quero
+						-- quero o valor de s_data_0 que foi usado no cálculo do s_diff
+						-- logo, quando s_diff foi calculado, esse valor foi pro s_data_1
+						s_perc_comp <= signed(s_c_syst_value(DATA_WIDTH-1 downto 1))-signed(s_data_1);
 						key <= '0';
+						-- considerando que + de 50% seria outra sístole
+						if (s_perc_comp(DATA_WIDTH-1) = '1') then
+							systole       <= '1'; 
+							-- ruim que vai dar choque entre esse e o outro, pois esse demora
+							-- um ciclo de clock a mais...
+							s_c_syst_value  <= s_p_data_1;
+						else 
+							-- só mais uma diástole
+							systole       <= '0';
+							s_c_syst_value <= s_c_syst_value;
+						end if;
 					end if;
 				else
-					-- vendo se o pico menor é mais ou menos de 50% do maior
-					-- se pá, bom aumentar um pouco essa porcentagem
-						-- teria um fift_perc <= s_c_syst_value(DATA_WIDTH-1 downto 1)
-						-- mas isso ta dando um atraso que n quero
-					-- quero o valor de s_data_0 que foi usado no cálculo do s_diff
-					-- logo, quando s_diff foi calculado, esse valor foi pro s_data_1
-					s_perc_comp <= signed(s_c_syst_value(DATA_WIDTH-1 downto 1))-signed(s_data_1);
-					key <= '0';
-					-- considerando que + de 50% seria outra sístole
-					if (s_perc_comp(DATA_WIDTH-1) = '1') then
-						systole       <= '1'; 
-						-- ruim que vai dar choque entre esse e o outro, pois esse demora
-						-- um ciclo de clock a mais...
-						s_c_syst_value  <= s_p_data_1;
-					else 
-						-- só mais uma diástole
-						systole       <= '0';
-						s_c_syst_value <= s_c_syst_value;
-					end if;
+					--n teve pico, mentem tudo
 				end if;
             when others     =>
                 s_data_0        <= (others => '0');

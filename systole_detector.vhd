@@ -70,8 +70,10 @@ architecture systole_detector_op of systole_detector is
 	--! @brief Vai calcular a diferença entre os dois sinais para saber
 	-- quem é maior
 	signal s_diff:      	std_logic_vector(DATA_WIDTH - 1 downto 0);
-	--! @brief Vai receber o shift do maior valor
-	signal fift_perc:		std_logic_vector(DATA_WIDTH - 2 downto 0);
+	
+	--! @brief Vai receber o shift do maior valor (n ta sendo usado)
+	--signal fift_perc:		std_logic_vector(DATA_WIDTH - 2 downto 0);
+	
 	--! @brief Vai ser um shift pra direita (divisão por 2) do maior 
 	--! sinal menos o menor sinal. É pra constatar se o menor sinal
 	--! é mais ou menos que 50% do sinal maior. Se for menor, considero
@@ -84,10 +86,17 @@ architecture systole_detector_op of systole_detector is
 	
 	-- Sinais auxiliares (por ora teste)
 	--! Previous s_data_1 value
-	signal s_p_data_1:		std_logic_vector(DATA_WIDTH - 1 downto 0);
+	--signal s_p_data_1:		std_logic_vector(DATA_WIDTH - 1 downto 0);
 	--! @brief Para que o s_c_syst_value seja sempre atualizado com o mesmo
 	--! sinal e não haja problemas de sincronismo
-	signal key:				std_logic;
+	--signal s_key:				std_logic;
+	
+	-- SINAIS QUE SERVEM DE PRINTF (lembrar que sao atualizados no ciclo de clock seguinte)
+	signal s_to_em_peak_1			:	std_logic;
+	signal s_to_em_peak_0			:	std_logic;
+	signal s_to_com_s0_maior		:	std_logic;
+	signal s_to_em_mais_de_50		:	std_logic;
+	signal s_to_em_menos_de_50		:	std_logic;
 
     begin
 
@@ -168,79 +177,133 @@ architecture systole_detector_op of systole_detector is
         if rst_n = '0' then
             s_data_0        <= (others => '0');
             s_data_1        <= (others => '0');
-			s_p_data_1		<= (others => '0');
+			--s_p_data_1		<= (others => '0');
             systole         <= '0';
 			s_c_syst_value	<= (others => '0');
-			key <= '0';
+			--s_key <= '0';
+			s_perc_comp		<= (others => '0');
+			s_diff			<= (others => '0');
+			
+			-- SINAIS QUE SERVEM DE PRINTF
+			s_to_em_peak_1			<= '0';
+			s_to_em_peak_0			<= '0';
+			s_to_com_s0_maior		<= '0';
+			s_to_em_mais_de_50		<= '0';
+			S_to_em_menos_de_50		<= '0';
         elsif rising_edge(clk) then
             case s_cstate is
             when S0_INIT    =>
                 s_data_0    	<= peak_value;
 				s_c_syst_value	<= peak_value;
-				-- testando pra ver se assim ele pega o primeiro dado,
-				-- antes era recebendo ele mesmo. 
-				-- Uuuuuhhh, funfou!!
                 s_data_1    <= s_data_1;
-				s_p_data_1		<= s_p_data_1;
+				--s_p_data_1		<= s_p_data_1;
                 systole       <= '0';
-				key <= '0';
+				--s_key <= '0';
             when S1_SAMP    =>
-				--s_data_0 é o dado mais novo
 				if (peak = '1') then
 					s_data_0    <= peak_value;
 					s_data_1    <= s_data_0;
-					s_p_data_1	<= s_data_1;
-					-- como ele demora um ciclo de clock, pegar o anterior pra fazer 
-					-- a conta 
+					--s_p_data_1	<= s_data_1;
 					s_diff      <= (signed(s_c_syst_value) - signed(s_data_0));
-					-- se 1, s_data_0 > s_c_syst_value, logo, o novo é maior
+					s_perc_comp <= signed(s_c_syst_value(DATA_WIDTH-1 downto 1))-signed(s_data_0);
+					
+					-- SINAIS QUE SERVEM DE PRINTF
+					s_to_em_peak_1			<= '1';
+					s_to_em_peak_0			<= '0';
+					
+					-- se 1, s_data_0 > s_c_syst_value, logo, o novo é uma sístole
 					if (s_diff(DATA_WIDTH-1) = '1') then
-						if (key = '0') then
-							key <= '1';
-						else				
+						
+						-- SINAIS QUE SERVEM DE PRINTF
+						s_to_com_s0_maior		<= '1';
+						s_to_em_mais_de_50		<= '0';
+						s_to_em_menos_de_50		<= '0';
+					
+						-- incluindo um atraso pra s_c_syst_value ser atualizado 
+						-- com o mesmo atraso nesse if(s_diff(DATA_WIDTH-1) = '1') ou no else
+						-- pq no else tem o atraso de calcular o s_perc_comp
+						--if (s_key = '0') then
+							--s_key <= '1';
+						--else				
 							systole       <= '1'; 
-							-- uma opção nao legivel (mas que tmb daria certo), é usar
-							-- o s_data_1, pq ele tmb ta sempre recebendo o s_data_0,
-							-- logo, te sempre o mesmo valor do s_p_data_0.
-							-- Na real, faz sentido sim...é isso que significa o s_data_1
-							-- Se der certo, mudar isso
-							-- Depois reescrever esses trem aqui em 
-							-- Puts, o diff ainda demora um ciclo pra ser calculado, entao
-							-- acho que deve pegar o s_p_data_1
-							s_c_syst_value  <= s_p_data_1;
-							key <= '0';
-						end if;
+							-- conferir se de fato era o s_p_data_1 (seria se tivesse a key)
+							s_c_syst_value  <= s_data_1;
+							--s_key <= '0';
+						--end if;
 					else
 						-- vendo se o pico menor é mais ou menos de 50% do maior
 						-- se pá, bom aumentar um pouco essa porcentagem
 							-- teria um fift_perc <= s_c_syst_value(DATA_WIDTH-1 downto 1)
-							-- mas isso ta dando um atraso que n quero
-						-- quero o valor de s_data_0 que foi usado no cálculo do s_diff
-						-- logo, quando s_diff foi calculado, esse valor foi pro s_data_1
-						s_perc_comp <= signed(s_c_syst_value(DATA_WIDTH-1 downto 1))-signed(s_data_1);
-						key <= '0';
+							-- mas isso ta dando um atraso que n quero, por isso, esse sinal
+							-- nem ta mais sendo usado
+						-- Quero o valor de s_data_0 que foi usado no cálculo do s_diff
+						-- mas, quando s_diff foi calculado, esse valor foi pro s_data_1
+						-- logo, to calculando com o s_data_1.
+						-- Uma opção é sempre calcular o s_perc_comp, mesmo fora desse else.
+						-- Dessa forma, n teria um atraso a mais pra entrar nesse else, ja
+						-- daria pra calcular s_perc_comp <= signed(s_c_syst_value(DATA_WIDTH-1 downto 1))
+						-- -signed(s_data_0), n precisaria da key e nem do s_p_data_1
+						--s_perc_comp <= signed(s_c_syst_value(DATA_WIDTH-1 downto 1))-signed(s_data_1);
+						--s_key <= '0';
 						-- considerando que + de 50% seria outra sístole
 						if (s_perc_comp(DATA_WIDTH-1) = '1') then
+							
+							-- SINAIS QUE SERVEM DE PRINTF
+							s_to_com_s0_maior		<= '0';		
+							s_to_em_mais_de_50		<= '1';
+							s_to_em_menos_de_50		<= '0';
+						
 							systole       <= '1'; 
-							-- ruim que vai dar choque entre esse e o outro, pois esse demora
-							-- um ciclo de clock a mais...
-							s_c_syst_value  <= s_p_data_1;
-						else 
+							-- conferir se de fato era o s_p_data_1 (seria se tivesse a key)
+							s_c_syst_value  <= s_data_1;
+						else
+							
+							-- SINAIS QUE SERVEM DE PRINTF
+							s_to_com_s0_maior		<= '0';	
+							s_to_em_menos_de_50		<= '1';	-- de fato vai ativar no primeiro 
+															-- pico pq vai entrar aqui qnd ainda
+															-- n tiver calculado s_diff e s_per_comp
+							s_to_em_mais_de_50		<= '0';
+							
 							-- só mais uma diástole
 							systole       <= '0';
 							s_c_syst_value <= s_c_syst_value;
 						end if;
 					end if;
 				else
-					--n teve pico, mentem tudo
+					s_data_0        <= s_data_0;
+					s_data_1        <= s_data_1;
+					--s_p_data_1		<= s_p_data_1;
+					systole         <= '0';
+					s_c_syst_value	<= s_c_syst_value;
+					--s_key 			<= s_key;
+					s_perc_comp		<= s_perc_comp;
+					s_diff			<= s_diff;
+					
+					-- SINAIS QUE SERVEM DE PRINTF
+					s_to_em_peak_1			<= '0';
+					s_to_em_peak_0			<= '1';
+					s_to_com_s0_maior		<= '0';
+					s_to_em_mais_de_50		<= '0';
+					S_to_em_menos_de_50		<= '0';
+					
 				end if;
             when others     =>
                 s_data_0        <= (others => '0');
 				s_data_1        <= (others => '0');
-				s_p_data_1		<= (others => '0');
+				--s_p_data_1		<= (others => '0');
 				systole         <= '0';
 				s_c_syst_value	<= (others => '0');
-				key <= '0';
+				--s_key <= '0';
+				s_perc_comp		<= (others => '0');
+				s_diff			<= (others => '0');
+				
+				-- SINAIS QUE SERVEM DE PRINTF
+				s_to_em_peak_1			<= '0';
+				s_to_em_peak_0			<= '0';
+				s_to_com_s0_maior		<= '0';
+				s_to_em_mais_de_50		<= '0';
+				S_to_em_menos_de_50		<= '0';
             end case;
         end if;
     end process FSM_OUT_PROC;

@@ -5,9 +5,11 @@ T = 1/fs;
 % Número de amostras a serem feitas
 L = 1000;
 
-% Arquivo no qual os valores da onda de entrada serão armazenados
-file = 'data_in.txt';
-fid = fopen(file, 'w');
+% Arquivos nos quais os valores da onda de entrada serão armazenados
+file_y = 'data_in.txt';
+fid_y = fopen(file, 'w');
+file_b = 'data_bin.txt';
+fid_b = fopen(file, 'w');
 
 % Start stopwatch timer
 tic
@@ -26,7 +28,22 @@ y = y.';
 % Insere y(n) no arquivo data_in.txt
 dlmwrite('data_in.txt', y);
 
-fclose(fid);
+% b vai ser a nova entrada y(n).
+% Primeiro, vamos deixar tudo > 0
+b = y + 1.2;
+% Segunda, temos 8 bits de entrada, logo, a entrada pode ir ate 255
+% O maior atual eh menor que 2.7. Sendo assim, podemos multiplicar 
+% b por 94 e pegar apenas a arte interia
+b = fix(b*94);
+figure
+    plot(t,b)
+% passando b de decimal pra binario
+b = dec2bin(b);
+% Insere b no arquivo data_bin.txt
+dlmwrite('data_bin.txt', b, 'delimiter','');
+
+fclose(fid_y);
+fclose(fid_b);
 %fprintf('length t: %d\n', length(t));
 %fprintf('length y: %d\n', length(y));
 

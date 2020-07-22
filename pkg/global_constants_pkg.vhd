@@ -38,5 +38,5 @@ package body global_constants_pkg is
     constant L_DATA: integer := 8;
     constant L_DATA_2: integer := 16;
     constant CLK_HALF_PERIOD: time := 0.5 ps;
-    
+	
 end package body global_constants_pkg;

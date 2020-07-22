@@ -1,13 +1,14 @@
---! @file      systole_detector_pkg.vhd
+--! @file      freq_calc_VHD.vhd
 --!
 --! @brief     pakage for subblock of the oximeter Systole detector
---! @details   Detects which of the wave peaks are systoles
+--! @details   It counts the number of clock cicles between two consecutive 
+--!				systoles and calculate the correspondent frequency
 --!
 --! @author    Liz Costato
 --! @author    Juliana Garçoni
 --! 
 --! @version   1.0
---! @date      2020-06-07
+--! @date      2020-07-22
 --! 
 --! @pre       
 --! @pre       
@@ -17,7 +18,7 @@
 -- Version History
 --
 -- Version  Date        Author       Changes
--- 1.0      2020-06-07 Liz Costato    Block Created
+-- 1.0      2020-07-22  Liz Costato    Block Created
 
 
 --------------------------------------------------------------------------------
@@ -27,45 +28,51 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use work.global_constants_pkg.all;
--- Entity ---------------------------------------------------------------------
-
---! @brief Oximeter: systole Detector
---!
---! @image html spec_block_ms.png
-
+	
 package systole_detector_pkg is
 
     -- Types ------------------------------------------------------------------
     
     --! States of FSM_SPEC_MS_DEC at \ref spec_ms_dec.behaviour
-    subtype ST_FSM_SYSTOLE is std_logic;    
-        constant S0_INIT:   ST_FSM_SYSTOLE    := '0';
-        constant S1_SAMP:   ST_FSM_SYSTOLE    := '1';
+    subtype ST_FSM_FREQ is std_logic;    
+        constant S0_IDLE:   	ST_FSM_FREQ    := '0';
+        constant S1_WORKING:	ST_FSM_FREQ    := '1';
 
     -- Constants --------------------------------------------------------------
-    constant DATA_ZERO: std_logic_vector(L_DATA downto 0);
-    constant DATA_WIDTH: integer;
+	constant MAX_FREQ: integer;
+	constant MIN_FREQ: integer;
+	constant MAX_CLK_COUNT: integer;
+	constant MIN_CLK_COUNT: integer;
+	constant TO_BPM: integer;
+	
     -- Components -------------------------------------------------------------
-    component systole_detector is
-
+    component freq_calc is
     port (
         -- Inputs ---------------------------------------------------
 
         clk         :   in std_logic;
         rst_n       :   in std_logic;
         start       :   in std_logic;
-        peak   		:   in std_logic;
-		data_in     :   in std_logic_vector(L_DATA - 1 downto 0);
+        systole		:   in std_logic;
 
         -- Outputs --------------------------------------------------
-
-        systole   :   out std_logic
+		
+		ack_out		:	out std_logic;
+        freq   		:   out integer range MIN_FREQ to MAX_FREQ;
+        --counter_start    :   out std_logic
     );
-
-    end component systole_detector;
+	end component freq_calc;
+	
 end package systole_detector_pkg;
 
 package body systole_detector_pkg is
-    constant DATA_ZERO: std_logic_vector(L_DATA downto 0) := (others => '0');
-    constant DATA_WIDTH: integer := L_DATA;
+	-- ver se eh uma boa opcao de valor
+	constant MAX_FREQ: integer := 350;
+    constant MIN_FREQ: integer := 0;
+	-- ver se eh uma boa opcao de valor
+	constant MAX_CLK_COUNT: integer := 8192;
+	constant MIN_CLK_COUNT: integer := 0;
+	-- se o clock estiver em picosegundos, precisa multiplica por 10^12
+	-- pra ter a freq em Hz, depois multiplicar por 60 pra ter em bpm
+	constant TO_BPM: integer := 60000000000000;
 end package body systole_detector_pkg;

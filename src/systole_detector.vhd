@@ -6,7 +6,7 @@
 --! @details   Detects which of the wave peaks are systoles
 --!
 --! @author    Liz Costato
---! @author    
+--! @author    Juliana Garçoni
 --! 
 --! @version   1.0
 --! @date      2020-06-07

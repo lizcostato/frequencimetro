@@ -32,6 +32,7 @@ package global_constants_pkg is
     -- Constants ---------------------------------------------------------------
     constant L_DATA          : integer;
     constant L_DATA_2        : integer;
+    constant RST_CLK_CNT     : integer;
     constant CLK_HALF_PERIOD : time;
 
 end package global_constants_pkg;
@@ -41,6 +42,7 @@ package body global_constants_pkg is
     --! The block below initialises the constants with the proper values.
     constant L_DATA          : integer := 8;
     constant L_DATA_2        : integer := 16;
+    constant RST_CLK_CNT     : integer := 10;
     constant CLK_HALF_PERIOD : time    := 0.5 ps;
 
 end package body global_constants_pkg;

@@ -49,7 +49,9 @@ package systole_detector_pkg is
         rst_n       :   in std_logic;
         start       :   in std_logic;
         peak        :   in std_logic;
-        data_in     :   in std_logic_vector(L_DATA - 1 downto 0);
+        --peak_value  :   in std_logic_vector(DATA_WIDTH - 1 downto 0);
+        peak_value  :   in std_logic_vector(7 downto 0);
+        --data_in     :   in std_logic_vector(L_DATA - 1 downto 0);
         -- Outputs ----------------------------------------------
         systole     :   out std_logic
     );

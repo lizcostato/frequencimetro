@@ -27,6 +27,7 @@ architecture Behavioral of systole_detector_tb is
     signal s_rst_n        :  std_logic := '1';
     signal s_start        :  std_logic := '0';
     signal s_peak         :  std_logic := '0';
+    signal s_new_data     :  std_logic := '0';  
     signal s_peak_value   :  std_logic_vector (DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_diff:     	 	std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_data_0:   		std_logic_vector(DATA_WIDTH - 1 downto 0) := (others => '0');
@@ -80,44 +81,58 @@ architecture Behavioral of systole_detector_tb is
                     s_peak     <= '0';
                     s_diff     <= (others => '0');
                     s_rst_done <= FALSE;
+                    s_clk_stop <= FALSE;
                 elsif (s_clk_cnt < RST_CLK_CNT) then
                     s_rst_n    <= '0';
                     s_start    <= '0';
                     s_peak     <= '0';
                     s_diff     <= (others => '0');
                     s_rst_done <= FALSE;
+                    s_clk_stop <= FALSE;
                 else
                     s_rst_n    <= '1';
                     s_start    <= '1';
+                    s_new_data <= '1';
                     s_peak     <= s_peak;
                     s_diff     <= s_diff;
                     s_rst_done <= TRUE;
+                    s_clk_stop <= FALSE;
                 end if;
 
-                if (not endfile(data_in)) then
-                    for i in data_input'range loop
-                        readline(data_in, data_in_line);
-                        read(data_in_line, data_input);
-                         
-                        s_data_0 <= data_input;
-                        s_data_1 <= s_data_0;
+                --if (s_new_data = '1') then
+                    if (not endfile(data_in)) then
+                        for i in data_input'range loop
+                            readline(data_in, data_in_line);
+                            read(data_in_line, data_input);
 
-                        s_diff <= (signed(s_data_0) - signed(s_data_1));
-                        s_peak <= s_diff(7);
-                    end loop;
+                            --s_data_0 <= data_input;
+                            --s_data_1 <= s_data_0;
 
-                    s_peak_value <= std_logic_vector(data_input(7 downto 0));
-                else
-                    file_close(data_in);
+                            --s_diff <= (signed(s_data_0) - signed(s_data_1));
+                            --s_peak <= s_diff(7);
+                        end loop;
 
-                    assert false report
-                    LF & "#######################################" &
-                    LF & "########## END OF SIMULATION ##########" &
-                    LF & "#######################################"
-                    severity failure;
-                    s_clk_stop <= TRUE;
-                    
-                end if;
+                        s_peak_value <= std_logic_vector(data_input(7 downto 0));
+                        s_peak <= '1';
+                        --s_new_data <= '0';
+
+                        --else
+                        --    s_peak <= '0';
+                        --    s_new_data <= '0';
+                        --end if;
+                    else
+                        file_close(data_in);
+                        s_peak <= '0';
+                        --s_new_data <= '0';
+
+                        assert false report
+                        LF & "#######################################" &
+                        LF & "########## END OF SIMULATION ##########" &
+                        LF & "#######################################"
+                        severity failure;
+                        s_clk_stop <= TRUE;
+                    end if;
+                --end if;
             end if;                
         end process ENABLE_PROC;
 end architecture Behavioral;

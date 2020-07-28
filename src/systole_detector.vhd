@@ -69,7 +69,7 @@ architecture systole_detector_op of systole_detector is
     --signal s_data_1:          std_logic_vector(DATA_WIDTH - 1 downto 0);
     --! @brief Vai calcular a diferença entre os dois sinais para saber
     -- quem é maior
-    signal s_diff:          std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_diff:          std_logic_vector(DATA_WIDTH downto 0);
     
     --! @brief Vai receber o shift do maior valor (n ta sendo usado)
     --signal fift_perc:        std_logic_vector(DATA_WIDTH - 2 downto 0);
@@ -80,7 +80,7 @@ architecture systole_detector_op of systole_detector is
     --! que temos uma diástole. Se for maior, considero que é uma 
     --! sístole, só de pico menor, e atualizo o valor da sístole pra esse.
     --! Talvez 50% seja um valor baixo....ainda estudar isso.
-    signal s_perc_comp:        std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_perc_comp:        std_logic_vector(DATA_WIDTH downto 0);
     --! Valor atual que estou considerando como sístole
     signal s_c_syst_value:    std_logic_vector(DATA_WIDTH - 1 downto 0);
     
@@ -192,30 +192,33 @@ architecture systole_detector_op of systole_detector is
                     
                     -- aqui nao precisa de calculo, pois:
                     -- se o dado anterior eh positivo e o atual negativo, o atual n eh sistole
-                    if (s_data_0(DATA_WIDTH-1) = '0' and peak_value(DATA_WIDTH-1) = '1') then 
-                        s_c_syst_value  <= peak_value;
-                        systole         <= '0';
+                    --if (s_c_syst_value(DATA_WIDTH-1) = '0' and peak_value(DATA_WIDTH-1) = '1') then 
+                    --    s_c_syst_value  <= peak_value;
+                    --    systole         <= '0';
 
                     -- se o dado anterior eh negativo e o atual positivo, o atual eh sistole
-                    elsif (s_data_0(DATA_WIDTH-1) = '1' and peak_value(DATA_WIDTH-1) = '0') then
-                        s_c_syst_value  <= s_data_0;
-                        systole         <= '1';
-                    else
+                    --elsif (s_c_syst_value(DATA_WIDTH-1) = '1' and peak_value(DATA_WIDTH-1) = '0') then
+                    --    s_c_syst_value  <= s_data_0;
+                    --    systole         <= '1';
+                    --else
                         -- calculamos aqui
-                        s_diff <= ((unsigned(s_data_0) - unsigned(peak_value)));
+						-- LIZ> mudei s_peak_value para s_c_syst_value pq a gente tem de comparar o mais
+						-- LIZ> novo com o que a gente atualmente considera como sistole e n o mais novo
+						-- LIZ> com o anterior
+                        s_diff <= ((signed('0' & s_c_syst_value) - signed('0' & peak_value)));
                         -- fazendo isso, calculamos o percentual absoluto dos dados (nao sei usar o abs em vhdl)
-                        s_perc_comp <= (signed('0' & s_data_0(DATA_WIDTH-2 downto 1)) - signed('0' & peak_value(DATA_WIDTH-2 downto 0)));
+                        s_perc_comp <= (signed('0' & '0' & s_c_syst_value(DATA_WIDTH-1 downto 1)) - signed('0' & peak_value(DATA_WIDTH-1 downto 0)));
                         --s_perc_comp <= signed((unsigned(s_data_0(DATA_WIDTH-1 downto 1)) - unsigned(peak_value)));
 
-                        s_data_1 <= s_data_0;
+                        --s_data_1 <= s_data_0;
 
                         -- se o valor atual eh maior que o anterior, ele eh sistole
-                        if (s_diff(DATA_WIDTH-1) = '1') then
+                        if (s_diff(DATA_WIDTH) = '1') then
                             --s_perc_comp     <= s_perc_comp;
-                            s_c_syst_value  <= peak_value;
+                            s_c_syst_value  <= s_data_0;
                             systole         <= '1';
                         -- mesmo menor, se o dado atual for mais de 50% do dado anterior, ele eh sistole
-                        elsif (s_perc_comp(DATA_WIDTH-1) = '1') then
+                        elsif (s_perc_comp(DATA_WIDTH) = '1') then
                             s_c_syst_value  <= s_data_0; -- eh o valor atual veio pra ca
                             systole         <= '1'; 
                         else    
@@ -224,7 +227,7 @@ architecture systole_detector_op of systole_detector is
                             systole        <= '0';
                             --end if;
                         end if;
-                    end if;
+                    --end if;
                 else
                     s_data_0        <= s_data_0;
                     --s_data_1        <= s_data_1;

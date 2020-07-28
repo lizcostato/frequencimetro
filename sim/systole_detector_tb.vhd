@@ -15,6 +15,7 @@ architecture Behavioral of systole_detector_tb is
     -- Testbench files ---------------------------------------------------------
     --! Input data generated in Matlab
     file data_in        :  text open read_mode is "frequencimetro/golden/data_bin.txt";
+	--file data_in        :  text open read_mode is "C:\Users\Administrador\Documents\UNB\quinto_semestre\Topicos_em_Engenharia\Frequencimetro_git_quartus\frequencimetro/golden/data_bin.txt";
     --! Output data with systoles
     --file data_out       :  text open write_mode is "frequencimetro/golden/data_out.txt";
 
@@ -146,6 +147,7 @@ end architecture Behavioral;
 -- 4: no clk 23 tem um calculo sendo feito errado, precisa checar isso melhor
 -- 5: s_clk_stop nao vai pra TRUE no final da simulação, mas isso nao trouxe
 -- nenhuma complicacao pro funcionamento do sistema
+	-- eu chuto que so n aparece na simulacao pq ela acabou
 -- 6: s_rst_done é só uma flag pra dizer que o teste do sistema no reset foi feito
 -- 7: tem que arrumar alguns sinais no rst também, mas nao é nada mt critico
 -- 8: ainda nao botei pra gerar arquivo de saida, mas assim que tiver tudo pronto
@@ -153,5 +155,8 @@ end architecture Behavioral;
 -- 9: nao esquecer de mudar os numeros hard coded pras constantes que tem nos pkg
 -- se pa precisa arrumar o pkg, pq ta dando conflito de dependencia por conta de
 -- uma constante (DATA_WIDTH)
+	-- isso, se n me engano, é que em algum lugar ta escrito errado. Pode ser outra
+	-- coisa agr, mas, quando eu tava tendo esse problema, era so isso hahaha
 -- sugestao: seria bom ver se o sistema em matlab consegue falar onde ta o pico
 -- e a sistole, pq ai em vhdl a gente so ia conferir isso
+	-- Traquilo!! Super posso fazer
